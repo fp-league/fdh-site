@@ -1,0 +1,1301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fortnite Drivers Hub</title>
+<link rel="icon" type="image/png" href="assets/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --asphalt:#0A0A0C;
+    --tarmac:#161617;
+    --tarmac-2:#1E1E20;
+    --line:#2C2C2F;
+    --white:#F5F5F5;
+    --dim:#9A9A9E;
+    --red:#E4002B;
+    --red-bright:#FF2E44;
+    --red-dim:#7A0016;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background:var(--asphalt);
+    color:var(--white);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+    background-image:
+      repeating-linear-gradient(135deg, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 2px, transparent 2px, transparent 40px);
+    position:relative;
+  }
+  body::before{
+    content:'';
+    position:fixed; inset:0; pointer-events:none; z-index:1; opacity:0.035; mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  h1,h2,h3,.display{ font-family:'Rajdhani',sans-serif; font-weight:700; letter-spacing:0.02em; text-transform:uppercase; }
+  .mono{ font-family:'JetBrains Mono',monospace; }
+  a{color:inherit;}
+  .wrap{ max-width:1100px; margin:0 auto; padding:0 24px; }
+
+  /* ---------- Nav ---------- */
+  nav{
+    position:sticky; top:0; z-index:50;
+    background:rgba(11,14,20,0.85); backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  nav .wrap{ display:flex; align-items:center; justify-content:space-between; height:64px; }
+  .logo{ font-size:20px; letter-spacing:0.06em; display:flex; align-items:center; gap:10px;}
+  .logo-crest{ width:34px; height:34px; object-fit:contain; }
+  .hero-crest{ width:76px; height:76px; object-fit:contain; margin-bottom:20px; filter:drop-shadow(0 0 24px rgba(228,0,43,0.4)); }
+  .nav-actions{ display:flex; gap:10px; align-items:center; }
+
+  /* ---------- Live ticker ---------- */
+  .ticker-bar{
+    background:var(--red); overflow:hidden; white-space:nowrap; position:relative; z-index:40;
+    border-bottom:1px solid rgba(0,0,0,0.3);
+  }
+  .ticker-track{ display:inline-flex; animation:ticker-scroll 28s linear infinite; padding:7px 0; }
+  .ticker-bar:hover .ticker-track{ animation-play-state:paused; }
+  .ticker-item{
+    display:inline-flex; align-items:center; gap:8px;
+    font-family:'Rajdhani',sans-serif; font-weight:700; font-size:13px; letter-spacing:0.05em; text-transform:uppercase;
+    color:#1A0004; padding:0 28px; border-right:1px solid rgba(0,0,0,0.25);
+  }
+  .ticker-item .live-dot{
+    width:7px; height:7px; border-radius:50%; background:#1A0004; animation:pulse-dot 1.4s ease-in-out infinite;
+  }
+  @keyframes ticker-scroll{ from{ transform:translateX(0); } to{ transform:translateX(-50%); } }
+  @keyframes pulse-dot{ 0%,100%{ opacity:1; } 50%{ opacity:0.25; } }
+
+  /* ---------- Buttons ---------- */
+  .btn{
+    font-family:'Rajdhani',sans-serif; font-weight:700; text-transform:uppercase; letter-spacing:0.05em;
+    font-size:14px; padding:10px 20px; border-radius:4px; border:1px solid transparent;
+    cursor:pointer; transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .btn:active{ transform:scale(0.97); }
+  .btn-primary{ background:var(--red); color:white; box-shadow:0 0 0 rgba(228,0,43,0); }
+  .btn-primary:hover{ box-shadow:0 0 22px rgba(228,0,43,0.5); }
+  .btn-ghost{ background:transparent; color:var(--white); border-color:var(--line); }
+  .btn-ghost:hover{ border-color:var(--red-bright); color:var(--red-bright); }
+  .btn-danger{ background:transparent; color:var(--red); border-color:var(--red); }
+
+  /* ---------- Hero ---------- */
+  .hero{ padding:90px 0 60px; position:relative; overflow:hidden; }
+  .hero::before{
+    content:''; position:absolute; inset:-20% -10%; z-index:0; pointer-events:none;
+    background-image:repeating-linear-gradient(100deg, rgba(228,0,43,0.05) 0px, rgba(228,0,43,0.05) 2px, transparent 2px, transparent 90px);
+    animation:speed-lines 6s linear infinite;
+  }
+  @keyframes speed-lines{ from{ transform:translateX(0); } to{ transform:translateX(-90px); } }
+  .hero .wrap{ position:relative; z-index:2; }
+  .flag-divider{
+    height:10px; width:100%;
+    background-image: repeating-conic-gradient(var(--tarmac-2) 0% 25%, var(--asphalt) 0% 50%);
+    background-size:20px 20px;
+  }
+  .eyebrow{ color:var(--red-bright); font-family:'JetBrains Mono',monospace; font-size:13px; letter-spacing:0.15em; text-transform:uppercase; margin-bottom:14px; }
+  .hero h1{ font-size:clamp(40px,7vw,76px); line-height:0.98; margin-bottom:18px; }
+  .hero h1 span{ color:var(--red); }
+  .hero p{ color:var(--dim); font-size:17px; max-width:520px; margin-bottom:30px; line-height:1.6; }
+  .hero-actions{ display:flex; gap:14px; flex-wrap:wrap; }
+
+  /* ---------- Driver License Card (signature element) ---------- */
+  .license-stage{ display:flex; justify-content:center; margin-top:60px; perspective:1200px; position:relative; }
+  .license-stage::before{
+    content:''; position:absolute; top:-40px; left:50%; transform:translateX(-50%);
+    width:480px; height:480px; border-radius:50%; pointer-events:none;
+    background:radial-gradient(circle, rgba(228,0,43,0.18) 0%, transparent 68%);
+    filter:blur(10px);
+  }
+  .license{
+    width:min(420px, 92vw);
+    background:linear-gradient(155deg, var(--tarmac-2) 0%, var(--tarmac) 60%);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:26px;
+    position:relative;
+    box-shadow:0 30px 60px -20px rgba(0,0,0,0.6);
+    transform:rotate(-3deg);
+    transition:transform .4s ease, box-shadow .4s ease;
+  }
+  .license:hover{ transform:rotate(0deg) translateY(-4px); box-shadow:0 30px 60px -20px rgba(0,0,0,0.7), 0 0 40px -6px rgba(228,0,43,0.45); }
+  .license::before{
+    content:'';
+    position:absolute; inset:0; border-radius:14px; padding:1px;
+    background:linear-gradient(135deg, var(--red), transparent 45%, var(--white) 100%);
+    -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor; mask-composite:exclude;
+    opacity:0.6; pointer-events:none;
+  }
+  .license-top{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:22px; }
+  .license-label{ font-size:11px; letter-spacing:0.18em; color:var(--dim); font-family:'JetBrains Mono',monospace; }
+  .license-tier{
+    font-family:'Rajdhani',sans-serif; font-weight:700; font-size:12px; letter-spacing:0.1em;
+    padding:4px 10px; border-radius:20px; text-transform:uppercase;
+    background:rgba(255,255,255,0.08); color:var(--white); border:1px solid rgba(255,255,255,0.28);
+  }
+  .license-callsign{ font-family:'Rajdhani',sans-serif; font-weight:700; font-size:30px; letter-spacing:0.02em; }
+  .license-epic{ color:var(--dim); font-size:13px; margin-top:2px; }
+  .license-bottom{ display:flex; justify-content:space-between; align-items:flex-end; margin-top:30px; }
+  .license-number{ font-family:'JetBrains Mono',monospace; font-size:34px; color:var(--red-bright); font-weight:700; }
+  .license-number-label{ font-size:10px; letter-spacing:0.18em; color:var(--dim); font-family:'JetBrains Mono',monospace; }
+
+  /* ---------- Sections ---------- */
+  section{ padding:70px 0; }
+  .section-head{ margin-bottom:36px; position:relative; padding-left:16px; }
+  .section-head::before{
+    content:''; position:absolute; left:0; top:2px; bottom:2px; width:3px;
+    background:linear-gradient(180deg, var(--red), transparent);
+  }
+  .section-head .eyebrow{ margin-bottom:8px; }
+  .section-head h2{ font-size:34px; }
+
+  .reveal{ opacity:0; transform:translateY(18px); transition:opacity .6s ease, transform .6s ease; }
+  .reveal.in{ opacity:1; transform:translateY(0); }
+
+  .grid-3{ display:grid; grid-template-columns:repeat(3,1fr); gap:18px; }
+  @media (max-width:760px){ .grid-3{ grid-template-columns:1fr; } }
+
+  .card{
+    background:var(--tarmac); border:1px solid var(--line); border-radius:10px; padding:22px;
+    transition:transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+  }
+  .card:hover{ transform:translateY(-3px); border-color:var(--red-dim); box-shadow:0 12px 30px -10px rgba(228,0,43,0.25); }
+  .card .num{ font-family:'JetBrains Mono',monospace; color:var(--red-bright); font-size:13px; margin-bottom:10px; }
+  .card h3{ font-size:19px; margin-bottom:8px; }
+  .card p{ color:var(--dim); font-size:14px; line-height:1.55; }
+
+  .promo-grid{ display:grid; grid-template-columns:1fr 1fr; gap:26px; }
+  @media (max-width:760px){ .promo-grid{ grid-template-columns:1fr; } }
+  .promo-col-head{ display:flex; align-items:center; gap:8px; margin-bottom:14px; }
+  .promo-col-head .dot{ width:8px; height:8px; border-radius:50%; }
+  .promo-col-head.league .dot{ background:var(--red); }
+  .promo-col-head.server .dot{ background:var(--red-bright); }
+  .promo-col-head h3{ font-size:15px; letter-spacing:0.08em; }
+
+  .promo-card{
+    background:var(--tarmac); border:1px solid var(--line); border-radius:10px; padding:16px 18px; margin-bottom:10px;
+    border-left:3px solid var(--red-dim); transition:box-shadow .2s ease, transform .2s ease;
+  }
+  .promo-card:hover{ transform:translateX(3px); box-shadow:-4px 0 20px -6px rgba(228,0,43,0.3); }
+  .promo-card.server{ border-left-color:var(--red-bright); }
+  .promo-card h4{ font-family:'Rajdhani',sans-serif; font-weight:700; font-size:16px; text-transform:uppercase; margin-bottom:4px; }
+  .promo-desc{ color:var(--dim); font-size:13px; line-height:1.5; }
+  .promo-empty{ color:var(--dim); font-size:13px; }
+
+  /* ---------- Driver catalogue / rankings table ---------- */
+  .rank-table{ width:100%; border-collapse:collapse; }
+  .rank-table th{ text-align:left; padding:10px 12px; color:var(--dim); font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.08em; text-transform:uppercase; border-bottom:1px solid var(--line); }
+  .rank-table td{ padding:12px; border-bottom:1px solid var(--line); font-size:14px; }
+  .rank-table tr:hover td{ background:rgba(228,0,43,0.06); }
+  .rank-pos{ font-family:'JetBrains Mono',monospace; color:var(--red-bright); font-weight:700; }
+  .rank-num{ font-family:'JetBrains Mono',monospace; color:var(--dim); }
+  .rank-tier{ font-size:11px; padding:3px 9px; border-radius:20px; text-transform:uppercase; font-family:'Rajdhani',sans-serif; font-weight:700; letter-spacing:0.06em; background:rgba(255,255,255,0.08); color:var(--white); border:1px solid rgba(255,255,255,0.28); display:inline-block; }
+  .rank-points{ font-family:'JetBrains Mono',monospace; color:var(--red); font-weight:700; }
+
+  /* ---------- League / track directory chips ---------- */
+  .chip-grid{ display:flex; flex-wrap:wrap; gap:10px; }
+  .chip{
+    background:var(--tarmac); border:1px solid var(--line); border-radius:20px;
+    padding:8px 16px; font-family:'Rajdhani',sans-serif; font-weight:600; font-size:14px; letter-spacing:0.02em;
+    transition:border-color .15s ease, color .15s ease;
+  }
+  .chip:hover{ border-color:var(--red-bright); color:var(--red-bright); }
+  .chip.track{ }
+  .chip.track:hover{ border-color:var(--red); color:var(--red); }
+
+  /* ---------- Awards grid ---------- */
+  .awards-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+  @media (max-width:760px){ .awards-grid{ grid-template-columns:1fr 1fr; } }
+  @media (max-width:480px){ .awards-grid{ grid-template-columns:1fr; } }
+  .award-card{ background:var(--tarmac); border:1px solid var(--line); border-radius:10px; padding:16px; text-align:center; }
+  .award-card .cat{ font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:var(--dim); margin-bottom:10px; }
+  .award-card .winner{ font-family:'Rajdhani',sans-serif; font-weight:700; font-size:18px; color:var(--white); }
+  .award-card .winner.empty{ color:var(--dim); font-weight:500; font-size:14px; }
+
+  /* ---------- Track makers ---------- */
+  .maker-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+  @media (max-width:760px){ .maker-grid{ grid-template-columns:1fr 1fr; } }
+  @media (max-width:480px){ .maker-grid{ grid-template-columns:1fr; } }
+  .maker-card{ background:var(--tarmac); border:1px solid var(--line); border-radius:10px; padding:16px; }
+  .maker-card h4{ font-family:'Rajdhani',sans-serif; font-weight:700; font-size:17px; text-transform:uppercase; }
+  .maker-card .epic{ color:var(--dim); font-size:12px; margin-top:2px; margin-bottom:10px; }
+  .maker-code-row{ display:flex; align-items:center; justify-content:space-between; background:var(--asphalt); border:1px solid var(--line); border-radius:6px; padding:7px 10px; }
+  .maker-code{ font-family:'JetBrains Mono',monospace; font-size:13px; color:var(--red-bright); }
+  .maker-copy{ background:none; border:none; color:var(--dim); font-size:11px; cursor:pointer; font-family:'JetBrains Mono',monospace; }
+  .maker-copy:hover{ color:var(--red-bright); }
+  .maker-no-code{ color:var(--dim); font-size:12px; }
+
+  /* ---------- Driver stats ---------- */
+  .stats-table td.win-pct{ color:var(--red-bright); font-family:'JetBrains Mono',monospace; font-weight:700; }
+  .stat-form{ display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:12px; margin-top:16px; }
+  .stat-form .field input{ text-align:center; }
+  .stat-status{
+    display:inline-flex; align-items:center; gap:7px; font-family:'Rajdhani',sans-serif; font-weight:700;
+    font-size:12px; text-transform:uppercase; letter-spacing:0.06em; padding:5px 12px; border-radius:20px;
+    margin-bottom:14px;
+  }
+  .stat-status .dot{ width:7px; height:7px; border-radius:50%; }
+  .stat-status.approved{ background:rgba(255,255,255,0.08); color:var(--white); border:1px solid rgba(255,255,255,0.28); }
+  .stat-status.approved .dot{ background:var(--white); }
+  .stat-status.pending{ background:rgba(228,0,43,0.12); color:var(--red-bright); border:1px solid rgba(228,0,43,0.35); }
+  .stat-status.pending .dot{ background:var(--red-bright); animation:pulse-dot 1.4s ease-in-out infinite; }
+  .stat-status.rejected{ background:rgba(255,255,255,0.04); color:var(--dim); border:1px solid var(--line); }
+  .stat-status.rejected .dot{ background:var(--dim); }
+  .approve-btn{ background:none; border:none; color:var(--white); cursor:pointer; font-size:12px; font-family:'JetBrains Mono',monospace; margin-right:10px; }
+  .approve-btn:hover{ text-decoration:underline; }
+  .reject-btn{ background:none; border:none; color:var(--red-bright); cursor:pointer; font-size:12px; font-family:'JetBrains Mono',monospace; }
+  .reject-btn:hover{ text-decoration:underline; }
+
+  /* ---------- Driver rankings (podium + leaderboard) ---------- */
+  .podium{ display:flex; align-items:flex-end; justify-content:center; gap:16px; margin-bottom:36px; }
+  .podium-spot{ text-align:center; width:150px; }
+  .podium-card{
+    background:var(--tarmac); border:1px solid var(--line); border-radius:10px 10px 0 0;
+    padding:18px 10px; position:relative;
+  }
+  .podium-spot.p1 .podium-card{ border-top:3px solid var(--white); padding-top:26px; }
+  .podium-spot.p2 .podium-card{ border-top:3px solid #C4C4C7; }
+  .podium-spot.p3 .podium-card{ border-top:3px solid var(--red-dim); }
+  .podium-pos{ font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--dim); margin-bottom:6px; }
+  .podium-spot.p1 .podium-pos{ color:var(--white); }
+  .podium-name{ font-family:'Rajdhani',sans-serif; font-weight:700; font-size:17px; text-transform:uppercase; }
+  .podium-points{ font-family:'JetBrains Mono',monospace; font-size:13px; color:var(--red-bright); margin-top:4px; }
+  .podium-base{ height:14px; background:var(--tarmac-2); border:1px solid var(--line); border-top:none; }
+  .podium-spot.p1 .podium-base{ height:26px; }
+  .podium-spot.p2 .podium-base{ height:16px; }
+  .podium-spot.p3 .podium-base{ height:8px; }
+
+  .leaderboard-row{
+    display:grid; grid-template-columns:50px 1fr auto; align-items:center; gap:14px;
+    padding:11px 14px; border-bottom:1px solid var(--line);
+  }
+  .leaderboard-row:hover{ background:rgba(228,0,43,0.06); }
+  .lb-pos{ font-family:'JetBrains Mono',monospace; color:var(--dim); font-size:14px; }
+  .lb-name{ font-family:'Rajdhani',sans-serif; font-weight:600; font-size:15px; }
+  .lb-name .num{ color:var(--dim); font-family:'JetBrains Mono',monospace; font-size:12px; margin-left:6px; }
+  .lb-points{ font-family:'JetBrains Mono',monospace; color:var(--red); font-weight:700; font-size:14px; }
+
+  /* ---------- Modal ---------- */
+  .modal-overlay{
+    display:none; position:fixed; inset:0; background:rgba(6,8,12,0.7); backdrop-filter:blur(4px);
+    align-items:center; justify-content:center; z-index:100; padding:20px;
+  }
+  .modal-overlay.open{ display:flex; }
+  .modal{
+    background:var(--tarmac-2); border:1px solid var(--line); border-radius:12px;
+    width:100%; max-width:400px; padding:30px;
+  }
+  .modal h3{ font-size:22px; margin-bottom:4px; }
+  .modal .sub{ color:var(--dim); font-size:13px; margin-bottom:20px; }
+  .field{ margin-bottom:14px; }
+  .field label{ display:block; font-size:12px; color:var(--dim); margin-bottom:6px; letter-spacing:0.04em; text-transform:uppercase; font-family:'JetBrains Mono',monospace;}
+  .field input{
+    width:100%; background:var(--asphalt); border:1px solid var(--line); border-radius:6px;
+    padding:10px 12px; color:var(--white); font-family:'Inter',sans-serif; font-size:14px;
+  }
+  .field input:focus{ outline:none; border-color:var(--red-bright); }
+  .modal-actions{ display:flex; gap:10px; margin-top:22px; }
+  .modal-actions .btn{ flex:1; }
+  .switch-mode{ text-align:center; margin-top:16px; font-size:13px; color:var(--dim); }
+  .switch-mode a{ color:var(--red-bright); cursor:pointer; text-decoration:underline; }
+  .form-msg{ font-size:13px; margin-top:10px; min-height:18px; }
+  .form-msg.error{ color:var(--red); }
+  .form-msg.ok{ color:var(--red-bright); }
+  .close-x{ position:absolute; top:16px; right:16px; cursor:pointer; color:var(--dim); background:none; border:none; font-size:20px; }
+  .modal{ position:relative; }
+
+  /* ---------- Admin ---------- */
+  .admin-form{ display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:10px; margin-bottom:16px; }
+  .admin-form input{
+    background:var(--asphalt); border:1px solid var(--line); border-radius:6px; padding:9px 11px; color:var(--white); font-size:13px;
+  }
+  table{ width:100%; border-collapse:collapse; font-size:13px; }
+  th,td{ text-align:left; padding:10px; border-bottom:1px solid var(--line); }
+  th{ color:var(--dim); font-family:'JetBrains Mono',monospace; font-weight:500; text-transform:uppercase; font-size:11px; letter-spacing:0.08em; }
+  .tag-active{ color:var(--red-bright); }
+  .tag-inactive{ color:var(--dim); }
+  .row-btn{ background:none; border:none; color:var(--red); cursor:pointer; font-size:12px; }
+
+  .hidden{ display:none !important; }
+
+  footer{ border-top:1px solid var(--line); padding:30px 0; color:var(--dim); font-size:13px; text-align:center; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <div class="logo"><img src="assets/logo.png" alt="FDH" class="logo-crest"> Fortnite Drivers Hub</div>
+    <div class="nav-actions" id="navActions">
+      <button class="btn btn-ghost" onclick="openModal('login')">Log in</button>
+      <button class="btn btn-primary" onclick="openModal('register')">Register as Driver</button>
+    </div>
+  </div>
+</nav>
+
+<div class="ticker-bar">
+  <div class="ticker-track" id="tickerTrack"><span class="ticker-item">Loading live feed…</span></div>
+</div>
+
+<!-- ============ LOGGED OUT: HERO ============ -->
+<div id="loggedOutView">
+  <div class="hero">
+    <div class="wrap">
+      <img src="assets/logo.png" alt="FDH" class="hero-crest">
+      <div class="eyebrow">// grid open — registration live</div>
+      <h1>Get on <span>the grid.</span></h1>
+      <p>Register your driver, claim your number, and get access to every promotion, sponsor code, and league drop across the Fortnite racing scene.</p>
+      <div class="hero-actions">
+        <button class="btn btn-primary" onclick="openModal('register')">Register as Driver</button>
+        <button class="btn btn-ghost" onclick="document.getElementById('rankingsSection').scrollIntoView({behavior:'smooth'})">Power rankings</button>
+        <button class="btn btn-ghost" onclick="document.getElementById('leaguesSection').scrollIntoView({behavior:'smooth'})">League directory</button>
+      </div>
+
+      <div class="license-stage">
+        <div class="license">
+          <div class="license-top">
+            <div>
+              <div class="license-label">Driver License</div>
+              <div class="license-callsign">YOUR CALLSIGN</div>
+              <div class="license-epic">Epic: your_username</div>
+            </div>
+            <div class="license-tier">Rookie</div>
+          </div>
+          <div class="license-bottom">
+            <div>
+              <div class="license-number-label">Driver No.</div>
+              <div class="license-number">#000</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="flag-divider"></div>
+
+<!-- ============ PROMOTIONS (public) ============ -->
+<section id="promoSection">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="eyebrow">// active now</div>
+      <h2>Promotions</h2>
+    </div>
+    <div class="promo-grid">
+      <div>
+        <div class="promo-col-head league"><span class="dot"></span><h3>LEAGUE</h3></div>
+        <div id="leaguePromoList"></div>
+      </div>
+      <div>
+        <div class="promo-col-head server"><span class="dot"></span><h3>SERVER</h3></div>
+        <div id="serverPromoList"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ DRIVER RANKINGS ============ -->
+<section id="rankingsSection">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="eyebrow">// top 50</div>
+      <h2>Driver rankings</h2>
+    </div>
+    <div class="podium" id="podium"></div>
+    <div id="leaderboardList"></div>
+  </div>
+</section>
+
+<!-- ============ DRIVER CATALOGUE / POWER RANKINGS ============ -->
+<section id="catalogueSection">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="eyebrow">// power rankings</div>
+      <h2>Driver catalogue</h2>
+    </div>
+    <table class="rank-table">
+      <thead><tr><th>Pos</th><th>Driver</th><th>Country</th><th>No.</th><th>Licence</th><th>Points</th></tr></thead>
+      <tbody id="catalogueBody"></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============ DRIVER STATS ============ -->
+<section id="statsSection">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="eyebrow">// approved submissions</div>
+      <h2>Driver stats</h2>
+    </div>
+    <table class="rank-table stats-table">
+      <thead><tr><th>Driver</th><th>Races</th><th>Wins</th><th>Podiums</th><th>Poles</th><th>Fastest laps</th><th>Win %</th></tr></thead>
+      <tbody id="statsBody"></tbody>
+    </table>
+    <div id="statsEmpty" class="card hidden" style="margin-top:14px;"><p>No approved driver stats yet.</p></div>
+  </div>
+</section>
+
+<section id="awardsSection">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="eyebrow">// this month</div>
+      <h2>Awards</h2>
+    </div>
+    <div class="awards-grid" id="awardsGrid"></div>
+  </div>
+</section>
+
+<!-- ============ LEAGUE DIRECTORY ============ -->
+<section id="leaguesSection">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="eyebrow">// tracked across the scene</div>
+      <h2>League directory</h2>
+    </div>
+    <div class="chip-grid" id="leaguesGrid"></div>
+  </div>
+</section>
+
+<!-- ============ TRACK REPORTS ============ -->
+<section id="tracksSection">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="eyebrow">// beta</div>
+      <h2>Track reports</h2>
+    </div>
+    <div class="chip-grid" id="tracksGrid"></div>
+  </div>
+</section>
+
+<!-- ============ TRACK MAKERS ============ -->
+<section id="makersSection">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="eyebrow">// map codes</div>
+      <h2>Track makers</h2>
+    </div>
+    <div class="maker-grid" id="makersGrid"></div>
+  </div>
+</section>
+
+<!-- ============ LOGGED IN: DASHBOARD ============ -->
+<div id="dashboardView" class="hidden">
+  <section style="padding-top:50px;">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div class="eyebrow">// your profile</div>
+        <h2>Welcome back</h2>
+      </div>
+      <div class="license-stage" style="margin-top:0;">
+        <div class="license" id="dashLicense">
+          <div class="license-top">
+            <div>
+              <div class="license-label">Driver License</div>
+              <div class="license-callsign" id="dashCallsign">—</div>
+              <div class="license-epic" id="dashEpic">—</div>
+            </div>
+            <div class="license-tier" id="dashTier">Rookie</div>
+          </div>
+          <div class="license-bottom">
+            <div>
+              <div class="license-number-label">Driver No.</div>
+              <div class="license-number" id="dashNumber">#000</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="text-align:center; margin-top:24px;">
+        <button class="btn btn-ghost" onclick="logout()">Log out</button>
+      </div>
+
+      <div style="max-width:520px; margin:50px auto 0;">
+        <div class="section-head reveal" style="padding-left:0;">
+          <h3 style="font-size:20px; font-family:'Rajdhani',sans-serif; text-transform:uppercase; font-weight:700;">Your stats</h3>
+        </div>
+        <div id="myStatStatus"></div>
+        <div class="stat-form">
+          <div class="field"><label>Races</label><input type="number" id="statRaces" min="0"></div>
+          <div class="field"><label>Wins</label><input type="number" id="statWins" min="0"></div>
+          <div class="field"><label>Podiums</label><input type="number" id="statPodiums" min="0"></div>
+          <div class="field"><label>Poles</label><input type="number" id="statPoles" min="0"></div>
+          <div class="field"><label>Fastest laps</label><input type="number" id="statFastest" min="0"></div>
+        </div>
+        <button class="btn btn-primary" style="width:100%; margin-top:14px;" onclick="submitMyStats()">Submit for approval</button>
+        <div class="form-msg" id="statMsg"></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ============ ADMIN PANEL ============ -->
+<div id="adminView" class="hidden">
+  <section>
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div class="eyebrow">// admin only</div>
+        <h2>Manage promotions</h2>
+      </div>
+
+      <h3 style="font-size:16px; margin-bottom:10px;">Pending stat submissions</h3>
+      <table id="adminStatsTable">
+        <thead><tr><th>Driver</th><th>Races</th><th>Wins</th><th>Podiums</th><th>Poles</th><th>Fastest</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <div id="adminStatsEmpty" class="card hidden" style="margin-bottom:20px;"><p>No pending submissions right now.</p></div>
+
+      <h3 style="font-size:16px; margin-bottom:10px;">New league promotion</h3>
+      <div class="admin-form">
+        <input id="leagueTitle" placeholder="Title">
+        <input id="leagueDesc" placeholder="Description">
+        <button class="btn btn-primary" onclick="addPromotion('league')">Add</button>
+      </div>
+      <table id="adminLeagueTable">
+        <thead><tr><th>Title</th><th>Description</th><th>Status</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+
+      <h3 style="font-size:16px; margin:30px 0 10px;">New server promotion</h3>
+      <div class="admin-form">
+        <input id="serverTitle" placeholder="Title">
+        <input id="serverDesc" placeholder="Description">
+        <button class="btn btn-primary" onclick="addPromotion('server')">Add</button>
+      </div>
+      <table id="adminServerTable">
+        <thead><tr><th>Title</th><th>Description</th><th>Status</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+
+      <h3 style="font-size:16px; margin:30px 0 10px;">Driver tiers &amp; points</h3>
+      <table id="adminDriversTable">
+        <thead><tr><th>Callsign</th><th>Epic</th><th>#</th><th>Licence</th><th>Points</th></tr></thead>
+        <tbody></tbody>
+      </table>
+
+      <h3 style="font-size:16px; margin:30px 0 10px;">Set award winner</h3>
+      <div class="admin-form">
+        <input id="awardCategory" placeholder="Category (e.g. Driver of the Month)">
+        <input id="awardMonth" placeholder="Month (e.g. 2026-07)">
+        <input id="awardWinner" placeholder="Winner callsign">
+        <button class="btn btn-primary" onclick="setAward()">Save</button>
+      </div>
+
+      <h3 style="font-size:16px; margin:30px 0 10px;">League directory</h3>
+      <div class="admin-form">
+        <input id="newLeagueName" placeholder="League name">
+        <button class="btn btn-primary" onclick="addDirectoryItem('leagues')">Add league</button>
+      </div>
+      <table id="adminLeaguesTable">
+        <thead><tr><th>Name</th><th>Status</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+
+      <h3 style="font-size:16px; margin:30px 0 10px;">Track reports</h3>
+      <div class="admin-form">
+        <input id="newTrackName" placeholder="Track name">
+        <button class="btn btn-primary" onclick="addDirectoryItem('tracks')">Add track</button>
+      </div>
+      <table id="adminTracksTable">
+        <thead><tr><th>Name</th><th>Status</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+
+      <h3 style="font-size:16px; margin:30px 0 10px;">Track makers</h3>
+      <div class="admin-form">
+        <input id="newMakerName" placeholder="Maker name">
+        <input id="newMakerEpic" placeholder="Epic username">
+        <input id="newMakerCode" placeholder="Map code">
+        <button class="btn btn-primary" onclick="addTrackMaker()">Add maker</button>
+      </div>
+      <table id="adminMakersTable">
+        <thead><tr><th>Name</th><th>Epic</th><th>Code</th><th>Status</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<footer>Fortnite Drivers Hub — built for the grid.</footer>
+
+<!-- ============ AUTH MODAL ============ -->
+<div class="modal-overlay" id="authModal">
+  <div class="modal">
+    <button class="close-x" onclick="closeModal()">&times;</button>
+
+    <div id="registerForm">
+      <h3>Register as Driver</h3>
+      <div class="sub">Claim your callsign and get on the grid.</div>
+      <button class="btn btn-ghost" style="width:100%; margin-bottom:16px;" onclick="loginWithDiscord()">Continue with Discord</button>
+      <div class="field"><label>Callsign</label><input id="regCallsign" placeholder="e.g. NightApex"></div>
+      <div class="field"><label>Epic Username</label><input id="regEpic" placeholder="your_epic_username"></div>
+      <div class="field"><label>Country</label><input id="regCountry" placeholder="e.g. UK"></div>
+      <div class="field"><label>Email</label><input id="regEmail" type="email"></div>
+      <div class="field"><label>Password</label><input id="regPassword" type="password"></div>
+      <div class="modal-actions"><button class="btn btn-primary" style="width:100%" onclick="register()">Create account</button></div>
+      <div class="form-msg" id="regMsg"></div>
+      <div class="switch-mode">Already have an account? <a onclick="switchModal('login')">Log in</a></div>
+    </div>
+
+    <div id="loginForm" class="hidden">
+      <h3>Log in</h3>
+      <div class="sub">Welcome back to the grid.</div>
+      <button class="btn btn-ghost" style="width:100%; margin-bottom:16px;" onclick="loginWithDiscord()">Continue with Discord</button>
+      <div class="field"><label>Email</label><input id="loginEmail" type="email"></div>
+      <div class="field"><label>Password</label><input id="loginPassword" type="password"></div>
+      <div class="modal-actions"><button class="btn btn-primary" style="width:100%" onclick="login()">Log in</button></div>
+      <div class="form-msg" id="loginMsg"></div>
+      <div class="switch-mode">New here? <a onclick="switchModal('register')">Register as driver</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ COMPLETE PROFILE (first Discord login) ============ -->
+<div class="modal-overlay" id="completeProfileModal">
+  <div class="modal">
+    <h3>Almost there</h3>
+    <div class="sub">Set up your driver profile to finish signing in.</div>
+    <div class="field"><label>Callsign</label><input id="cpCallsign" placeholder="e.g. NightApex"></div>
+    <div class="field"><label>Epic Username</label><input id="cpEpic" placeholder="your_epic_username"></div>
+    <div class="field"><label>Country</label><input id="cpCountry" placeholder="e.g. UK"></div>
+    <div class="modal-actions"><button class="btn btn-primary" style="width:100%" onclick="completeDiscordProfile()">Finish setup</button></div>
+    <div class="form-msg" id="cpMsg"></div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// SUPABASE CONFIG — replace these two with your project's values
+// Supabase dashboard → Project Settings → API
+// ============================================================
+const SUPABASE_URL = 'https://glgjaldoovvgndynwkfw.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdsZ2phbGRvb3Z2Z25keW53a2Z3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQwNTE4NTQsImV4cCI6MjA5OTYyNzg1NH0.OjRMVq7HB0a1V-G3ETiS4ubWN1RBRtoDookMRP90hNw';
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// Cloudflare Worker that syncs is_admin from your Discord server's admin role
+const ADMIN_SYNC_WORKER_URL = 'https://fdh-admin-sync.YOUR_SUBDOMAIN.workers.dev';
+
+let currentUser = null;
+let currentProfile = null;
+
+// ---------- Modal handling ----------
+function openModal(mode){
+  document.getElementById('authModal').classList.add('open');
+  switchModal(mode);
+}
+function closeModal(){
+  document.getElementById('authModal').classList.remove('open');
+}
+function switchModal(mode){
+  document.getElementById('registerForm').classList.toggle('hidden', mode !== 'register');
+  document.getElementById('loginForm').classList.toggle('hidden', mode !== 'login');
+}
+
+// ---------- Auth ----------
+async function loginWithDiscord(){
+  await supabaseClient.auth.signInWithOAuth({ provider: 'discord' });
+}
+
+function getDiscordId(user){
+  if(!user || !user.identities) return null;
+  const identity = user.identities.find(i => i.provider === 'discord');
+  if(!identity) return null;
+  // Supabase usually exposes the Discord snowflake as provider_id; some setups use identity_data.sub or .id
+  return identity.identity_data?.provider_id || identity.identity_data?.sub || identity.identity_data?.id || identity.id;
+}
+
+async function register(){
+  const callsign = document.getElementById('regCallsign').value.trim();
+  const epic = document.getElementById('regEpic').value.trim();
+  const country = document.getElementById('regCountry').value.trim();
+  const email = document.getElementById('regEmail').value.trim();
+  const password = document.getElementById('regPassword').value;
+  const msg = document.getElementById('regMsg');
+  msg.className = 'form-msg';
+  msg.textContent = '';
+
+  if(!callsign || !epic || !email || !password){
+    msg.textContent = 'Fill in every field.'; msg.className = 'form-msg error'; return;
+  }
+
+  const { data, error } = await supabaseClient.auth.signUp({ email, password });
+  if(error){ msg.textContent = error.message; msg.className = 'form-msg error'; return; }
+
+  // assign next driver number
+  const { count } = await supabaseClient.from('profiles').select('*', { count:'exact', head:true });
+  const driverNumber = (count || 0) + 1;
+
+  const { error: profileError } = await supabaseClient.from('profiles').insert({
+    id: data.user.id,
+    callsign,
+    epic_username: epic,
+    country,
+    driver_number: driverNumber
+  });
+
+  if(profileError){ msg.textContent = profileError.message; msg.className = 'form-msg error'; return; }
+
+  msg.textContent = 'Account created! Check your email to confirm, then log in.';
+  msg.className = 'form-msg ok';
+}
+
+async function login(){
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const msg = document.getElementById('loginMsg');
+  msg.className = 'form-msg'; msg.textContent = '';
+
+  const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  if(error){ msg.textContent = error.message; msg.className = 'form-msg error'; return; }
+
+  closeModal();
+  await refreshSession();
+}
+
+async function logout(){
+  await supabaseClient.auth.signOut();
+  await refreshSession();
+}
+
+async function refreshSession(){
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  currentUser = session ? session.user : null;
+
+  if(currentUser){
+    const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', currentUser.id).maybeSingle();
+    currentProfile = profile;
+
+    if(!currentProfile){
+      const discordId = getDiscordId(currentUser);
+      if(discordId){
+        // First-time Discord login — collect the missing driver details
+        document.getElementById('completeProfileModal').classList.add('open');
+        return; // wait for completeDiscordProfile()
+      }
+    } else {
+      const discordId = getDiscordId(currentUser);
+      if(discordId && !currentProfile.discord_id){
+        await supabaseClient.from('profiles').update({ discord_id: discordId }).eq('id', currentUser.id);
+      }
+      if(discordId) syncDiscordAdmin(discordId);
+      loadMyStats();
+    }
+  } else {
+    currentProfile = null;
+  }
+  renderAuthState();
+  loadPromotions();
+  loadRankings();
+  loadCatalogue();
+  loadPublicStats();
+  loadAwards();
+  loadDirectories();
+  loadTrackMakers();
+  if(currentProfile && currentProfile.is_admin) loadAdminData();
+}
+
+async function completeDiscordProfile(){
+  const callsign = document.getElementById('cpCallsign').value.trim();
+  const epic = document.getElementById('cpEpic').value.trim();
+  const country = document.getElementById('cpCountry').value.trim();
+  const msg = document.getElementById('cpMsg');
+  msg.className = 'form-msg'; msg.textContent = '';
+
+  if(!callsign || !epic){ msg.textContent = 'Callsign and Epic username are required.'; msg.className = 'form-msg error'; return; }
+
+  const { count } = await supabaseClient.from('profiles').select('*', { count:'exact', head:true });
+  const driverNumber = (count || 0) + 1;
+  const discordId = getDiscordId(currentUser);
+
+  const { error } = await supabaseClient.from('profiles').insert({
+    id: currentUser.id,
+    callsign, epic_username: epic, country,
+    driver_number: driverNumber,
+    discord_id: discordId
+  });
+
+  if(error){ msg.textContent = error.message; msg.className = 'form-msg error'; return; }
+
+  document.getElementById('completeProfileModal').classList.remove('open');
+  if(discordId) syncDiscordAdmin(discordId);
+  await refreshSession();
+}
+
+async function syncDiscordAdmin(discordId){
+  try{
+    const res = await fetch(ADMIN_SYNC_WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ discord_id: discordId })
+    });
+    if(!res.ok) return;
+    const { isAdmin } = await res.json();
+    if(currentProfile && currentProfile.is_admin !== isAdmin){
+      currentProfile.is_admin = isAdmin;
+      renderAuthState();
+      if(isAdmin) loadAdminData();
+    }
+  } catch(e){
+    // Worker not deployed yet, or offline — admin status just won't auto-sync this load
+    console.warn('Discord admin sync unavailable:', e);
+  }
+}
+
+function renderAuthState(){
+  const nav = document.getElementById('navActions');
+  const loggedOut = document.getElementById('loggedOutView');
+  const dash = document.getElementById('dashboardView');
+  const admin = document.getElementById('adminView');
+
+  if(currentUser && currentProfile){
+    nav.innerHTML = `<span class="mono" style="color:var(--dim); font-size:13px;">${currentProfile.callsign}</span>`;
+    loggedOut.classList.add('hidden');
+    dash.classList.remove('hidden');
+    document.getElementById('dashCallsign').textContent = currentProfile.callsign;
+    document.getElementById('dashEpic').textContent = 'Epic: ' + currentProfile.epic_username;
+    document.getElementById('dashTier').textContent = currentProfile.tier;
+    document.getElementById('dashNumber').textContent = '#' + String(currentProfile.driver_number).padStart(3,'0');
+    admin.classList.toggle('hidden', !currentProfile.is_admin);
+  } else {
+    nav.innerHTML = `
+      <button class="btn btn-ghost" onclick="openModal('login')">Log in</button>
+      <button class="btn btn-primary" onclick="openModal('register')">Register as Driver</button>`;
+    loggedOut.classList.remove('hidden');
+    dash.classList.add('hidden');
+    admin.classList.add('hidden');
+  }
+}
+
+// ---------- Promotions (public) ----------
+async function loadPromotions(){
+  const { data: promos } = await supabaseClient.from('promotions').select('*').eq('active', true).order('created_at', { ascending:false });
+
+  const leagueList = document.getElementById('leaguePromoList');
+  const serverList = document.getElementById('serverPromoList');
+  leagueList.innerHTML = '';
+  serverList.innerHTML = '';
+
+  const league = (promos || []).filter(p => p.type === 'league');
+  const server = (promos || []).filter(p => p.type === 'server');
+
+  leagueList.innerHTML = league.length
+    ? league.map(p => `
+        <div class="promo-card">
+          <h4>${p.title}</h4>
+          <div class="promo-desc">${p.description || ''}</div>
+        </div>`).join('')
+    : `<div class="promo-empty">No active league promotions right now.</div>`;
+
+  serverList.innerHTML = server.length
+    ? server.map(p => `
+        <div class="promo-card server">
+          <h4>${p.title}</h4>
+          <div class="promo-desc">${p.description || ''}</div>
+        </div>`).join('')
+    : `<div class="promo-empty">No active server promotions right now.</div>`;
+
+  updateTicker(league, server);
+}
+
+// ---------- Live ticker ----------
+function updateTicker(league, server){
+  const track = document.getElementById('tickerTrack');
+  const items = [...league.map(p => `LEAGUE — ${p.title}`), ...server.map(p => `SERVER — ${p.title}`)];
+  if(!items.length){
+    track.innerHTML = `<span class="ticker-item"><span class="live-dot"></span>Grid open — registration live</span>`;
+    return;
+  }
+  const html = items.map(t => `<span class="ticker-item"><span class="live-dot"></span>${t}</span>`).join('');
+  track.innerHTML = html + html; // duplicate for seamless loop
+}
+
+// ---------- Driver rankings (podium + top 50) ----------
+async function loadRankings(){
+  const { data: drivers } = await supabaseClient.from('profiles').select('*').order('power_points', { ascending:false }).limit(50);
+  const list = drivers || [];
+
+  const podiumEl = document.getElementById('podium');
+  const top3 = [list[1], list[0], list[2]]; // display order: 2nd, 1st, 3rd
+  const spotClasses = ['p2','p1','p3'];
+  podiumEl.innerHTML = top3.map((d, i) => {
+    if(!d) return '';
+    const pos = i === 1 ? 1 : (i === 0 ? 2 : 3);
+    return `
+      <div class="podium-spot ${spotClasses[i]}">
+        <div class="podium-card">
+          <div class="podium-pos">#${pos}</div>
+          <div class="podium-name">${d.callsign}</div>
+          <div class="podium-points"><span class="cu" data-target="${d.power_points}">0</span> pts</div>
+        </div>
+        <div class="podium-base"></div>
+      </div>`;
+  }).join('');
+  podiumEl.querySelectorAll('.cu').forEach(el => countUp(el, parseInt(el.dataset.target) || 0));
+
+  const boardEl = document.getElementById('leaderboardList');
+  const rest = list.slice(3);
+  boardEl.innerHTML = rest.map((d, i) => `
+    <div class="leaderboard-row">
+      <div class="lb-pos">#${i + 4}</div>
+      <div class="lb-name">${d.callsign}<span class="num">#${String(d.driver_number).padStart(3,'0')}</span></div>
+      <div class="lb-points">${d.power_points} pts</div>
+    </div>`).join('');
+}
+
+// ---------- Driver stats (public approved table) ----------
+async function loadPublicStats(){
+  const { data: stats } = await supabase
+    .from('driver_stats')
+    .select('*, profiles(callsign)')
+    .eq('status', 'approved')
+    .order('wins', { ascending:false });
+
+  const body = document.getElementById('statsBody');
+  const empty = document.getElementById('statsEmpty');
+  body.innerHTML = '';
+
+  if(!stats || !stats.length){
+    empty.classList.remove('hidden');
+    return;
+  }
+  empty.classList.add('hidden');
+
+  stats.forEach(s => {
+    const winPct = s.races > 0 ? Math.round((s.wins / s.races) * 100) : 0;
+    body.innerHTML += `
+      <tr>
+        <td>${s.profiles ? s.profiles.callsign : '—'}</td>
+        <td>${s.races}</td>
+        <td>${s.wins}</td>
+        <td>${s.podiums}</td>
+        <td>${s.poles}</td>
+        <td>${s.fastest_laps}</td>
+        <td class="win-pct">${winPct}%</td>
+      </tr>`;
+  });
+}
+
+// ---------- Your own stats submission ----------
+async function loadMyStats(){
+  if(!currentUser) return;
+  const { data: mine } = await supabaseClient.from('driver_stats').select('*').eq('id', currentUser.id).maybeSingle();
+  const statusEl = document.getElementById('myStatStatus');
+
+  if(mine){
+    document.getElementById('statRaces').value = mine.races;
+    document.getElementById('statWins').value = mine.wins;
+    document.getElementById('statPodiums').value = mine.podiums;
+    document.getElementById('statPoles').value = mine.poles;
+    document.getElementById('statFastest').value = mine.fastest_laps;
+
+    const labels = { approved:'Approved', pending:'Pending review', rejected:'Rejected — resubmit anytime' };
+    statusEl.innerHTML = `<div class="stat-status ${mine.status}"><span class="dot"></span>${labels[mine.status]}</div>`;
+  } else {
+    statusEl.innerHTML = '';
+    ['statRaces','statWins','statPodiums','statPoles','statFastest'].forEach(id => document.getElementById(id).value = 0);
+  }
+}
+
+async function submitMyStats(){
+  const msg = document.getElementById('statMsg');
+  msg.className = 'form-msg'; msg.textContent = '';
+  if(!currentUser) return;
+
+  const payload = {
+    id: currentUser.id,
+    races: parseInt(document.getElementById('statRaces').value) || 0,
+    wins: parseInt(document.getElementById('statWins').value) || 0,
+    podiums: parseInt(document.getElementById('statPodiums').value) || 0,
+    poles: parseInt(document.getElementById('statPoles').value) || 0,
+    fastest_laps: parseInt(document.getElementById('statFastest').value) || 0,
+    status: 'pending',
+    submitted_at: new Date().toISOString()
+  };
+
+  const { error } = await supabaseClient.from('driver_stats').upsert(payload);
+  if(error){ msg.textContent = error.message; msg.className = 'form-msg error'; return; }
+
+  msg.textContent = 'Submitted — waiting on admin approval.';
+  msg.className = 'form-msg ok';
+  loadMyStats();
+}
+
+// ---------- Driver catalogue / power rankings ----------
+async function loadCatalogue(){
+  const { data: drivers } = await supabaseClient.from('profiles').select('*').order('power_points', { ascending:false });
+  const body = document.getElementById('catalogueBody');
+  body.innerHTML = '';
+  (drivers || []).forEach((d, i) => {
+    body.innerHTML += `
+      <tr>
+        <td class="rank-pos">#${i + 1}</td>
+        <td>${d.callsign}</td>
+        <td>${d.country || '—'}</td>
+        <td class="rank-num">${String(d.driver_number).padStart(3,'0')}</td>
+        <td><span class="rank-tier">${d.tier}</span></td>
+        <td class="rank-points">${d.power_points}</td>
+      </tr>`;
+  });
+}
+
+// ---------- Awards ----------
+const AWARD_CATEGORIES = [
+  'Driver of the Month','Rookie of the Month','Most Improved Driver','Most Consistent Driver',
+  'Fastest of the Month','Map of the Month','Overtake of the Month','Comeback of the Month',
+  'League of the Month','Race of the Month','Lap of the Month'
+];
+
+async function loadAwards(){
+  const currentMonth = new Date().toISOString().slice(0,7);
+  const { data: awards } = await supabaseClient.from('awards').select('*').eq('month', currentMonth);
+  const grid = document.getElementById('awardsGrid');
+  grid.innerHTML = AWARD_CATEGORIES.map(cat => {
+    const match = (awards || []).find(a => a.category === cat);
+    return `
+      <div class="award-card">
+        <div class="cat">${cat}</div>
+        <div class="winner ${match && match.winner_callsign ? '' : 'empty'}">${match && match.winner_callsign ? match.winner_callsign : 'TBD'}</div>
+      </div>`;
+  }).join('');
+}
+
+// ---------- League / track directories ----------
+async function loadDirectories(){
+  const { data: leagues } = await supabaseClient.from('leagues').select('*').eq('active', true).order('name');
+  document.getElementById('leaguesGrid').innerHTML = (leagues || []).map(l => `<div class="chip">${l.name}</div>`).join('');
+
+  const { data: tracks } = await supabaseClient.from('tracks').select('*').eq('active', true).order('name');
+  document.getElementById('tracksGrid').innerHTML = (tracks || []).map(t => `<div class="chip track">${t.name}</div>`).join('');
+}
+
+// ---------- Track makers ----------
+async function loadTrackMakers(){
+  const { data: makers } = await supabaseClient.from('track_makers').select('*').eq('active', true).order('name');
+  document.getElementById('makersGrid').innerHTML = (makers || []).map(m => `
+    <div class="maker-card">
+      <h4>${m.name}</h4>
+      <div class="epic">${m.epic_username ? 'Epic: ' + m.epic_username : ''}</div>
+      ${m.map_code
+        ? `<div class="maker-code-row"><span class="maker-code">${m.map_code}</span><button class="maker-copy" onclick="navigator.clipboard.writeText('${m.map_code}')">COPY</button></div>`
+        : `<div class="maker-no-code">No map code listed</div>`}
+    </div>`).join('');
+}
+
+// ---------- Admin ----------
+function renderPromoTable(rows, tbody, type){
+  tbody.innerHTML = '';
+  rows.forEach(p => {
+    tbody.innerHTML += `
+      <tr>
+        <td>${p.title}</td>
+        <td>${p.description || ''}</td>
+        <td class="${p.active ? 'tag-active' : 'tag-inactive'}">${p.active ? 'Active' : 'Off'}</td>
+        <td><button class="row-btn" onclick="togglePromotion('${p.id}', ${p.active})">${p.active ? 'Deactivate' : 'Activate'}</button></td>
+      </tr>`;
+  });
+}
+
+async function loadAdminData(){
+  const { data: pendingStats } = await supabase
+    .from('driver_stats')
+    .select('*, profiles(callsign)')
+    .eq('status', 'pending')
+    .order('submitted_at', { ascending:true });
+
+  const statsBody = document.querySelector('#adminStatsTable tbody');
+  const statsEmpty = document.getElementById('adminStatsEmpty');
+  statsBody.innerHTML = '';
+  if(pendingStats && pendingStats.length){
+    statsEmpty.classList.add('hidden');
+    pendingStats.forEach(s => {
+      statsBody.innerHTML += `
+        <tr>
+          <td>${s.profiles ? s.profiles.callsign : '—'}</td>
+          <td>${s.races}</td>
+          <td>${s.wins}</td>
+          <td>${s.podiums}</td>
+          <td>${s.poles}</td>
+          <td>${s.fastest_laps}</td>
+          <td>
+            <button class="approve-btn" onclick="reviewStat('${s.id}','approved')">Approve</button>
+            <button class="reject-btn" onclick="reviewStat('${s.id}','rejected')">Reject</button>
+          </td>
+        </tr>`;
+    });
+  } else {
+    statsEmpty.classList.remove('hidden');
+  }
+
+  const { data: promos } = await supabaseClient.from('promotions').select('*').order('created_at', { ascending:false });
+  const league = (promos || []).filter(p => p.type === 'league');
+  const server = (promos || []).filter(p => p.type === 'server');
+
+  renderPromoTable(league, document.querySelector('#adminLeagueTable tbody'));
+  renderPromoTable(server, document.querySelector('#adminServerTable tbody'));
+
+  const { data: drivers } = await supabaseClient.from('profiles').select('*').order('driver_number', { ascending:true });
+  const drvBody = document.querySelector('#adminDriversTable tbody');
+  drvBody.innerHTML = '';
+  (drivers || []).forEach(d => {
+    drvBody.innerHTML += `
+      <tr>
+        <td>${d.callsign}</td>
+        <td>${d.epic_username}</td>
+        <td class="mono">#${String(d.driver_number).padStart(3,'0')}</td>
+        <td>
+          <select onchange="setTier('${d.id}', this.value)" style="background:var(--asphalt); color:var(--white); border:1px solid var(--line); border-radius:4px; padding:4px 6px;">
+            ${['rookie','racer','pro','elite'].map(t => `<option value="${t}" ${d.tier===t?'selected':''}>${t}</option>`).join('')}
+          </select>
+        </td>
+        <td>
+          <input type="number" value="${d.power_points}" style="width:70px; background:var(--asphalt); color:var(--white); border:1px solid var(--line); border-radius:4px; padding:4px 6px;"
+            onchange="setPoints('${d.id}', this.value)">
+        </td>
+      </tr>`;
+  });
+
+  const { data: leagues } = await supabaseClient.from('leagues').select('*').order('name');
+  const leagueBody = document.querySelector('#adminLeaguesTable tbody');
+  leagueBody.innerHTML = '';
+  (leagues || []).forEach(l => {
+    leagueBody.innerHTML += `
+      <tr>
+        <td>${l.name}</td>
+        <td class="${l.active ? 'tag-active' : 'tag-inactive'}">${l.active ? 'Active' : 'Off'}</td>
+        <td><button class="row-btn" onclick="toggleDirectoryItem('leagues','${l.id}', ${l.active})">${l.active ? 'Deactivate' : 'Activate'}</button></td>
+      </tr>`;
+  });
+
+  const { data: tracks } = await supabaseClient.from('tracks').select('*').order('name');
+  const trackBody = document.querySelector('#adminTracksTable tbody');
+  trackBody.innerHTML = '';
+  (tracks || []).forEach(t => {
+    trackBody.innerHTML += `
+      <tr>
+        <td>${t.name}</td>
+        <td class="${t.active ? 'tag-active' : 'tag-inactive'}">${t.active ? 'Active' : 'Off'}</td>
+        <td><button class="row-btn" onclick="toggleDirectoryItem('tracks','${t.id}', ${t.active})">${t.active ? 'Deactivate' : 'Activate'}</button></td>
+      </tr>`;
+  });
+
+  const { data: makers } = await supabaseClient.from('track_makers').select('*').order('name');
+  const makerBody = document.querySelector('#adminMakersTable tbody');
+  makerBody.innerHTML = '';
+  (makers || []).forEach(m => {
+    makerBody.innerHTML += `
+      <tr>
+        <td>${m.name}</td>
+        <td>${m.epic_username || '—'}</td>
+        <td class="mono">${m.map_code || '—'}</td>
+        <td class="${m.active ? 'tag-active' : 'tag-inactive'}">${m.active ? 'Active' : 'Off'}</td>
+        <td><button class="row-btn" onclick="toggleTrackMaker('${m.id}', ${m.active})">${m.active ? 'Deactivate' : 'Activate'}</button></td>
+      </tr>`;
+  });
+}
+
+async function addPromotion(type){
+  const titleEl = document.getElementById(type + 'Title');
+  const descEl = document.getElementById(type + 'Desc');
+  const title = titleEl.value.trim();
+  const description = descEl.value.trim();
+  if(!title) return;
+  await supabaseClient.from('promotions').insert({ type, title, description });
+  titleEl.value = '';
+  descEl.value = '';
+  loadAdminData(); loadPromotions();
+}
+
+async function togglePromotion(id, active){
+  await supabaseClient.from('promotions').update({ active: !active }).eq('id', id);
+  loadAdminData(); loadPromotions();
+}
+
+async function setTier(id, tier){
+  await supabaseClient.from('profiles').update({ tier }).eq('id', id);
+  loadAdminData(); loadCatalogue(); loadRankings();
+}
+
+async function setPoints(id, power_points){
+  await supabaseClient.from('profiles').update({ power_points: parseInt(power_points) || 0 }).eq('id', id);
+  loadAdminData(); loadCatalogue(); loadRankings();
+}
+
+async function setAward(){
+  const category = document.getElementById('awardCategory').value.trim();
+  const month = document.getElementById('awardMonth').value.trim();
+  const winner_callsign = document.getElementById('awardWinner').value.trim();
+  if(!category || !month) return;
+  await supabaseClient.from('awards').upsert({ category, month, winner_callsign }, { onConflict: 'category,month' });
+  document.getElementById('awardCategory').value = '';
+  document.getElementById('awardMonth').value = '';
+  document.getElementById('awardWinner').value = '';
+  loadAwards();
+}
+
+async function addDirectoryItem(table){
+  const inputId = table === 'leagues' ? 'newLeagueName' : 'newTrackName';
+  const input = document.getElementById(inputId);
+  const name = input.value.trim();
+  if(!name) return;
+  await supabaseClient.from(table).insert({ name });
+  input.value = '';
+  loadAdminData(); loadDirectories();
+}
+
+async function toggleDirectoryItem(table, id, active){
+  await supabaseClient.from(table).update({ active: !active }).eq('id', id);
+  loadAdminData(); loadDirectories();
+}
+
+async function addTrackMaker(){
+  const name = document.getElementById('newMakerName').value.trim();
+  const epic_username = document.getElementById('newMakerEpic').value.trim();
+  const map_code = document.getElementById('newMakerCode').value.trim();
+  if(!name) return;
+  await supabaseClient.from('track_makers').insert({ name, epic_username, map_code });
+  document.getElementById('newMakerName').value = '';
+  document.getElementById('newMakerEpic').value = '';
+  document.getElementById('newMakerCode').value = '';
+  loadAdminData(); loadTrackMakers();
+}
+
+async function reviewStat(id, status){
+  await supabaseClient.from('driver_stats').update({ status, reviewed_at: new Date().toISOString() }).eq('id', id);
+  loadAdminData(); loadPublicStats();
+}
+
+async function toggleTrackMaker(id, active){
+  await supabaseClient.from('track_makers').update({ active: !active }).eq('id', id);
+  loadAdminData(); loadTrackMakers();
+}
+
+// ---------- Scroll reveal ----------
+const revealObserver = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('in'); });
+}, { threshold: 0.15 });
+document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+// ---------- Count-up animation ----------
+function countUp(el, target, duration = 900){
+  const start = performance.now();
+  function tick(now){
+    const progress = Math.min((now - start) / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    el.textContent = Math.round(eased * target);
+    if(progress < 1) requestAnimationFrame(tick);
+    else el.textContent = target;
+  }
+  requestAnimationFrame(tick);
+}
+
+// ---------- Init ----------
+refreshSession();
+supabaseClient.auth.onAuthStateChange(() => refreshSession());
+</script>
+
+</body>
+</html>

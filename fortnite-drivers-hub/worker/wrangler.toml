@@ -1,0 +1,13 @@
+name = "fdh-admin-sync"
+main = "worker.js"
+compatibility_date = "2026-07-01"
+
+[vars]
+DISCORD_GUILD_ID = "YOUR_DISCORD_SERVER_ID"
+ADMIN_ROLE_ID = "YOUR_ADMIN_ROLE_ID"
+SUPABASE_URL = "https://YOUR_PROJECT.supabase.co"
+ALLOWED_ORIGIN = "https://yourusername.github.io"
+
+# Secrets — set these with wrangler, never put them here:
+#   wrangler secret put DISCORD_BOT_TOKEN
+#   wrangler secret put SUPABASE_SERVICE_ROLE_KEY
